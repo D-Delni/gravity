@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gravity!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #F5F1EB;
+      --bg2:         #EDE8E0;
+      --surface:     #FDFAF6;
+      --border:      #DDD8CF;
+      --ink:         #1A1714;
+      --ink-mid:     #6B6560;
+      --ink-light:   #8d8375;
+      --font-display: 'DM Serif Display', serif;
+      --font-body:    'DM Sans', sans-serif;
+      /* layout */
+      --nav-w:       200px;
+      --header-h:    68px;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-weight: 300;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       APP SHELL
+    ══════════════════════════════════════════════════════════ */
+    .app {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       LEFT NAVBAR
+    ══════════════════════════════════════════════════════════ */
+    .navbar {
+      width: var(--nav-w);
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .nav-header {
+      padding: 1.6rem 1.4rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      line-height: 1;
+    }
+
+    .wordmark h1 {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-weight: 400;
+      color: var(--ink);
+    }
+
+    .wordmark .exclaim {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 1.45rem;
+      color: var(--ink-mid);
+    }
+
+    .nav-subtitle {
+      font-size: 0.66rem;
+      color: var(--ink-light);
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+
+    /* planet list */
+    .nav-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 0.75rem 0;
+    }
+
+    .nav-list::-webkit-scrollbar { width: 4px; }
+    .nav-list::-webkit-scrollbar-track { background: transparent; }
+    .nav-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 1.4rem;
+      cursor: pointer;
+      transition: background 0.16s;
+      position: relative;
+      user-select: none;
+    }
+
+    .nav-item:hover { background: var(--bg2); }
+
+    .nav-item.active {
+      background: var(--bg2);
+    }
+
+    /* active bar */
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 20%; bottom: 20%;
+      width: 3px;
+      background: var(--ink);
+      border-radius: 0 2px 2px 0;
+    }
+
+    .nav-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+
+    .nav-item.active .nav-dot {
+      transform: scale(1.25);
+      box-shadow: 0 0 0 2px var(--bg2), 0 0 0 3px var(--ink-light);
+    }
+
+    .nav-label {
+      font-size: 0.8rem;
+      color: var(--ink-mid);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      transition: color 0.16s;
+    }
+
+    .nav-item.active .nav-label {
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .nav-index {
+      font-size: 0.62rem;
+      color: var(--ink-light);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    /* nav footer */
+    .nav-footer {
+      padding: 0.9rem 1.1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       MAIN CONTENT
+    ══════════════════════════════════════════════════════════ */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* top bar */
+    .topbar {
+      height: var(--header-h);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 2rem;
+      gap: 0.6rem;
+      flex-shrink: 0;
+      background: var(--surface);
+    }
+
+    /* planet stage */
+    .stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── Nav arrows ────────────────────────────────────── */
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 0.18s, box-shadow 0.18s, transform 0.18s;
+      z-index: 10;
+      color: var(--ink-mid);
+    }
+
+    .nav-arrow:hover {
+      background: var(--bg2);
+      box-shadow: 0 4px 16px rgba(26,23,20,0.10);
+      color: var(--ink);
+    }
+
+    .nav-arrow:active { transform: translateY(-50%) scale(0.94); }
+
+    .nav-arrow.left  { left:  2rem; }
+    .nav-arrow.right { right: 2rem; }
+
+    .nav-arrow svg { width: 18px; height: 18px; }
+
+    .nav-arrow.disabled {
+      opacity: 0.25;
+      pointer-events: none;
+    }
+
+    /* ── Planet view panel ─────────────────────────────── */
+    .planet-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      opacity: 0;
+      animation: viewIn 0.4s cubic-bezier(0.22,1,0.36,1) forwards;
+      max-height: 100%;
+    }
+
+    @keyframes viewIn {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+
+    /* ── Carousel track ─────────────────────────────────────── */
+    #carousel-track {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+      /* transition is set dynamically by JS */
+    }
+
+    .carousel-slide {
+      min-width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    /* planet name heading */
+    .planet-heading {
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .planet-heading-name {
+      font-family: var(--font-display);
+      font-size: 1.9rem;
+      font-weight: 400;
+      color: var(--ink);
+      cursor: pointer;
+      border-bottom: 1px dashed transparent;
+      transition: border-color 0.18s;
+      display: inline-block;
+      line-height: 1.1;
+    }
+    .planet-heading-name:hover { border-color: var(--ink-light); }
+
+    .name-input-large {
+      font-family: var(--font-display);
+      font-size: 1.9rem;
+      color: var(--ink);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--ink);
+      outline: none;
+      text-align: center;
+      width: 260px;
+    }
+
+    .planet-counter-label {
+      font-size: 0.68rem;
+      color: var(--ink-light);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 0.2rem;
+    }
+
+    /* ── Orbit SVG ─────────────────────────────────────── */
+    .orbit-wrap {
+      position: relative;
+      width: 300px; height: 300px;
+      flex-shrink: 0;
+    }
+
+    .orbit-wrap svg { display: block; overflow: visible; }
+
+    .orbit-track {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 1.5;
+      stroke-dasharray: 5 6;
+    }
+
+    .orbit-arc {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.55s cubic-bezier(0.34,1.2,0.64,1), stroke 0.4s ease;
+    }
+
+    .planet-body {
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,0.12));
+      transition: fill 0.4s ease;
+      cursor: pointer;
+    }
+
+    .planet-group.bounce {
+      animation: planetBounce 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+      transform-origin: 150px 150px; /* CX CY — centre of the 300x300 SVG */
+    }
+
+    @keyframes planetBounce {
+      0%   { transform: scale(1)    translateY(0); }
+      20%  { transform: scale(0.88) translateY(6px); }
+      50%  { transform: scale(1.13) translateY(-10px); }
+      72%  { transform: scale(0.96) translateY(3px); }
+      88%  { transform: scale(1.04) translateY(-3px); }
+      100% { transform: scale(1)    translateY(0); }
+    }
+
+    .planet-shine {
+      fill: white;
+      opacity: 0.26;
+      pointer-events: none;
+    }
+
+    .moon-dot {
+      fill: var(--ink);
+      transition: cx 0.55s cubic-bezier(0.34,1.2,0.64,1),
+                  cy 0.55s cubic-bezier(0.34,1.2,0.64,1);
+    }
+
+    .pct-label {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      fill: var(--ink);
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+    }
+
+    .day-sub-label {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      fill: var(--ink-light);
+      text-anchor: middle;
+      dominant-baseline: middle;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    /* ── Controls row ──────────────────────────────────── */
+    .controls-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      width: 300px;
+    }
+
+    .day-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .step-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+      font-family: var(--font-body);
+      line-height: 1;
+    }
+
+    .step-btn:hover {
+      background: var(--ink);
+      color: var(--bg);
+      border-color: var(--ink);
+    }
+
+    .day-input {
+      width: 60px;
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 400;
+      padding: 0.38rem 0.2rem;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.18s;
+      visibility: hidden;
+      display: none;
+    }
+    .day-input:focus { border-color: var(--ink-mid); }
+
+    .day-sub-label-row{
+      display: flex;
+      align-items: center;
+      gap: 0.45rem; 
+    }
+
+    .day-main-display{
+      font-family: var(--font-body);
+      font-size: 1.4rem;
+      fill: var(--ink-light);
+      text-anchor: middle;
+      dominant-baseline: middle;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    } 
+
+    .day-unit {
+      font-size: 0.7rem;
+      color: var(--ink-light);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .target-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.72rem;
+      color: var(--ink-light);
+      letter-spacing: 0.04em;
+      padding: 0.1rem 0.4rem; 
+    }
+
+    .target-input {
+      width: 48px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      border-bottom: 1px dashed var(--border);
+      color: var(--ink-mid);
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      padding: 0.1rem 0.2rem;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    .target-input:focus { border-color: var(--ink-mid); }
+
+    /* ── Streak pill ───────────────────────────────────── */
+    .streak-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.35rem 1rem 0.35rem 0.75rem;
+      font-size: 0.78rem;
+      color: var(--ink-mid);
+      transition: box-shadow 0.2s;
+    }
+
+    .streak-pill.pulse { animation: pillPulse 0.42s ease; }
+
+    @keyframes pillPulse {
+      0%   { transform: scale(1); }
+      45%  { transform: scale(1.08); box-shadow: 0 3px 14px rgba(26,23,20,0.15); }
+      100% { transform: scale(1); }
+    }
+
+    .streak-icon { width: 14px; height: 14px; flex-shrink: 0; }
+
+    .streak-val {
+      font-family: var(--font-display);
+      font-size: 0.92rem;
+      color: var(--ink);
+      cursor: pointer;
+      border-bottom: 1px dashed transparent;
+      transition: border-color 0.15s;
+    }
+    .streak-val:hover { border-color: var(--ink-light); }
+
+    .streak-edit {
+      width: 40px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--ink);
+      color: var(--ink);
+      font-family: var(--font-display);
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    .streak-unit {
+      font-size: 0.68rem;
+      color: var(--ink-light);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Orbits-completed badge ────────────────────────────── */
+    .orbits-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.7rem;
+      color: var(--ink-light);
+      letter-spacing: 0.06em;
+    }
+
+    .orbits-count {
+      font-family: var(--font-display);
+      font-size: 0.88rem;
+      color: var(--ink-mid);
+    }
+
+    /* ── Congrats overlay ──────────────────────────────────── */
+    .congrats-dialog {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2.25rem 2rem 1.75rem;
+      max-width: 320px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(26,23,20,0.14);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .congrats-dialog h2 {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 400;
+      color: var(--ink);
+      margin-bottom: 0.4rem;
+    }
+
+    .congrats-dialog p {
+      font-size: 0.78rem;
+      color: var(--ink-light);
+      line-height: 1.65;
+      margin-bottom: 1.25rem;
+    }
+
+    .congrats-next-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--ink-mid);
+      margin-bottom: 1.5rem;
+    }
+
+    .congrats-next-input {
+      width: 64px;
+      text-align: center;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      padding: 0.38rem 0.2rem;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    .congrats-next-input:focus { border-color: var(--ink-mid); }
+
+    /* Confetti particles */
+    .confetti-wrap {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .confetti-wrap span {
+      position: absolute;
+      top: -10px;
+      width: 7px; height: 7px;
+      border-radius: 2px;
+      opacity: 0;
+      animation: confettiFall 1.4s ease-in forwards;
+    }
+
+    @keyframes confettiFall {
+      0%   { opacity: 1; transform: translateY(0)      rotate(0deg)   scale(1); }
+      80%  { opacity: 1; }
+      100% { opacity: 0; transform: translateY(280px)  rotate(540deg) scale(0.6); }
+    }
+
+    /* ── Empty state ───────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      text-align: center;
+      padding: 2rem;
+      opacity: 0;
+      animation: viewIn 0.5s ease forwards;
+    }
+
+    .empty-orb {
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: var(--bg2);
+      border: 2px dashed var(--border);
+    }
+
+    .empty-state h2 {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 400;
+      color: var(--ink-mid);
+    }
+
+    .empty-state p {
+      font-size: 0.8rem;
+      color: var(--ink-light);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Buttons ───────────────────────────────────────── */
+    button {
+      font-family: var(--font-body);
+      font-weight: 400;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      border-radius: 999px;
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+      line-height: 1;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: var(--bg);
+      padding: 0.6rem 1.3rem;
+      width: 100%;
+    }
+    .btn-primary:hover {
+      background: #3A3530;
+      box-shadow: 0 2px 10px rgba(26,23,20,0.18);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink-mid);
+      padding: 0.55rem 1rem;
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--bg2); color: var(--ink); }
+
+    .btn-danger {
+      background: transparent;
+      color: #C0392B;
+      padding: 0.55rem 1rem;
+      border: 1px solid #e8c5c0;
+      width: 100%;
+    }
+    .btn-danger:hover { background: #fdf0ef; }
+
+    /* ── Confirm overlay ───────────────────────────────── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(245,241,235,0.85);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .overlay.show { display: flex; }
+
+    .dialog {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2.25rem 2rem 1.75rem;
+      max-width: 300px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(26,23,20,0.12);
+    }
+
+    .dialog h2 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .dialog p {
+      font-size: 0.78rem;
+      color: var(--ink-light);
+      line-height: 1.65;
+      margin-bottom: 1.5rem;
+    }
+
+    .dialog-actions { display: flex; gap: 0.6rem; justify-content: center; }
+
+    /* ── Dot pagination (bottom of stage) ──────────────── */
+    .pagination {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .page-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+
+    .page-dot.active {
+      background: var(--ink);
+      transform: scale(1.4);
+    }
+
+    /* ── Responsive ────────────────────────────────────── */
+    @media (max-width: 640px) {
+      :root { --nav-w: 160px; }
+      .orbit-wrap { width: 240px; height: 240px; }
+      .controls-area { width: 240px; }
+      .nav-arrow.left  { left: 0.5rem; }
+      .nav-arrow.right { right: 0.5rem; }
+    }
+
+    @media (max-width: 440px) {
+      .navbar { display: none; }
+      .nav-arrow.left  { left: 0.25rem; }
+      .nav-arrow.right { right: 0.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── LEFT NAVBAR ─────────────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-header">
+      <div class="wordmark">
+        <h1>Gravity</h1><span class="exclaim">!</span>
+      </div>
+      <div class="nav-subtitle">Planet tracker</div>
+    </div>
+
+    <div class="nav-list" id="navList"></div>
+
+    <div class="nav-footer">
+      <button class="btn-primary" onclick="addCounter()">+ New planet</button>
+      <button class="btn-danger"  onclick="showResetDialog()">Reset all</button>
+    </div>
+  </nav>
+
+  <!-- ── MAIN CONTENT ────────────────────────────────────── -->
+  <div class="content">
+
+    <div class="topbar">
+      <button class="btn-ghost" id="deleteBtn" onclick="deleteCurrentPlanet()">Remove planet</button>
+    </div>
+
+    <!-- stage: one planet at a time -->
+    <div class="stage" id="stage">
+
+      <button class="nav-arrow left" id="arrowLeft" onclick="navigate(-1)" title="Previous planet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+
+      <div id="planetView"></div>
+
+      <button class="nav-arrow right" id="arrowRight" onclick="navigate(1)" title="Next planet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONGRATS OVERLAY ───────────────────────────────────── -->
+<div class="overlay" id="congrats-overlay">
+  <div class="congrats-dialog">
+    <div class="confetti-wrap" id="confetti-wrap"></div>
+    <h2 id="congrats-title">Orbit complete!</h2>
+    <p id="congrats-body">You completed your orbit. Set a new target to keep going.</p>
+    <div class="congrats-next-row">
+      <span>Next target:</span>
+      <input class="congrats-next-input" id="congrats-next-input"
+             type="number" min="1" value="30" />
+      <span>days</span>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn-ghost"                  onclick="dismissCongrats()">Maybe later</button>
+      <button class="btn-primary" style="width:auto" onclick="confirmCongrats()">Let&#39;s go!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TARGET ORBIT OVERLAY ──────────────────────────────── -->
+<div class="overlay" id="orbit-overlay">
+  <div class="dialog">
+    <h2>Change target orbit?</h2>
+    <p>This will reset the current day count to zero.<br>The orbit starts fresh.</p>
+    <div class="dialog-actions">
+      <button class="btn-ghost"                  onclick="cancelOrbit()">Cancel</button>
+      <button class="btn-primary" style="width:auto" onclick="confirmOrbit()">Yes, reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESET OVERLAY ─────────────────────────────────────── -->
+<div class="overlay" id="overlay">
+  <div class="dialog">
+    <h2>Reset all planets?</h2>
+    <p>All days and streaks will return to zero. The orbits start fresh.</p>
+    <div class="dialog-actions">
+      <button class="btn-ghost"   onclick="hideResetDialog()">Cancel</button>
+      <button class="btn-primary" style="width:auto" onclick="confirmReset()">Reset all</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  "use strict";
+
+  // ── Geometry ──────────────────────────────────────────────
+  const SVG_SIZE = 300;
+  const CX = SVG_SIZE / 2, CY = SVG_SIZE / 2;
+  const ORBIT_R  = 120;
+  const PLANET_R = 52;
+  const MOON_R   = 6.5;
+  const CIRC     = 2 * Math.PI * ORBIT_R;
+
+  // ── State ─────────────────────────────────────────────────
+  let counters   = [];
+  let activeIdx  = 0;
+  let animating  = false;
+
+  // ── Helpers ───────────────────────────────────────────────
+
+  function pct(c) {
+    return c.targetDays > 0 ? Math.min(1, c.currentDay / c.targetDays) : 0;
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function moonPos(fraction) {
+    const angle = 2 * Math.PI * fraction - Math.PI / 2;
+    return {
+      x: CX + ORBIT_R * Math.cos(angle),
+      y: CY + ORBIT_R * Math.sin(angle),
+    };
+  }
+
+  function darken(hex, factor = 0.52) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    const d = v => Math.max(0, Math.round(v * factor)).toString(16).padStart(2,'0');
+    return `#${d(r)}${d(g)}${d(b)}`;
+  }
+
+  const NAME_POOL = [
+    'Aethon','Caelum','Draven','Eryx','Fenris',
+    'Galen','Helix','Idris','Joven','Kairos',
+    'Lyran','Moros','Nexus','Oryn','Phaeton',
+    'Quill','Rayne','Solus','Thorn','Umbra',
+  ];
+  let nameIdx = 0;
+  function nextPlanetName() {
+    const n = NAME_POOL[nameIdx % NAME_POOL.length];
+    nameIdx++;
+    return n;
+  }
+
+  // ── API ───────────────────────────────────────────────────
+
+  async function api(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(path, opts);
+    if (res.status === 204) return null;
+    return res.json();
+  }
+
+  async function loadCounters() {
+    counters  = await api('GET', '/api/counters');
+    nameIdx   = counters.length;
+    activeIdx = Math.min(activeIdx, Math.max(0, counters.length - 1));
+    renderAll();
+  }
+
+  async function addCounter() {
+    const c = await api('POST', '/api/counters', { name: nextPlanetName() });
+    counters.push(c);
+    activeIdx = counters.length - 1;
+    renderAll('right');
+  }
+
+  async function deleteCurrentPlanet() {
+    if (!counters.length) return;
+    const id = counters[activeIdx].id;
+    await api('DELETE', `/api/counters/${id}`);
+    counters.splice(activeIdx, 1);
+    activeIdx = Math.min(activeIdx, Math.max(0, counters.length - 1));
+    renderAll();
+  }
+
+  async function patchCounter(id, fields) {
+    const updated = await api('PATCH', `/api/counters/${id}`, fields);
+    const idx = counters.findIndex(c => c.id === id);
+    if (idx !== -1) counters[idx] = updated;
+    renderNav();
+    renderPagination();
+    updatePlanetSVG(id);
+  }
+
+  function showResetDialog()  { document.getElementById('overlay').classList.add('show'); }
+  function hideResetDialog()  { document.getElementById('overlay').classList.remove('show'); }
+
+  async function confirmReset() {
+    counters = await api('POST', '/api/counters/reset');
+    hideResetDialog();
+    renderAll();
+  }
+
+  // ── Navigation ────────────────────────────────────────────
+  // Fix: replaced fragile animationend listener with setTimeout.
+  // The old code attached animationend on an element whose entrance
+  // animation (viewIn) had already finished — so the event never fired,
+  // activeIdx was never updated, and the view never changed.
+
+  function navigate(dir) {
+    if (animating) return;
+    const next = activeIdx + dir;
+    if (next < 0 || next >= counters.length) return;
+    transitionTo(next, dir > 0 ? 'right' : 'left');
+  }
+
+  function jumpTo(idx) {
+    if (animating) return;
+    if (idx === activeIdx) return;
+    const dir = idx > activeIdx ? 'right' : 'left';
+    transitionTo(idx, dir);
+  }
+
+  function transitionTo(nextIdx, dir) {
+    animating = true;
+
+    const wrap      = document.getElementById('planetView');
+    const current   = wrap.firstElementChild;
+    const OUT_MS    = 200;
+    const IN_CLASS  = dir === 'right' ? 'slide-in-left'  : 'slide-in-right';
+    const OUT_CLASS = dir === 'right' ? 'slide-out-left' : 'slide-out-right';
+
+    if (current && current.classList.contains('planet-view')) {
+      // Cancel any lingering entrance animation, then play exit
+      current.style.animation = 'none';
+      void current.offsetWidth;           // force reflow
+      current.style.animation = '';
+      current.classList.add(OUT_CLASS);
+
+      setTimeout(() => {
+        activeIdx = nextIdx;
+        renderPlanetView(IN_CLASS);
+        renderNav();
+        renderPagination();
+        updateArrows();
+        animating = false;
+      }, OUT_MS);
+    } else {
+      // No existing card (empty state) — swap immediately
+      activeIdx = nextIdx;
+      renderPlanetView(IN_CLASS);
+      renderNav();
+      renderPagination();
+      updateArrows();
+      animating = false;
+    }
+  }
+
+  // ── Render: full ──────────────────────────────────────────
+
+  function renderAll(slideDir) {
+    renderNav();
+    renderPagination();
+    renderPlanetView(slideDir);
+    updateArrows();
+  }
+
+  // ── Render: navbar ────────────────────────────────────────
+
+  function renderNav() {
+    const list = document.getElementById('navList');
+    list.innerHTML = '';
+
+    if (!counters.length) {
+      list.innerHTML = `<div style="padding:1rem 1.4rem; font-size:0.72rem; color:var(--ink-light); letter-spacing:0.06em;">No planets yet</div>`;
+      return;
+    }
+
+    counters.forEach((c, i) => {
+      const item = document.createElement('div');
+      item.className = 'nav-item' + (i === activeIdx ? ' active' : '');
+      item.innerHTML = `
+        <div class="nav-dot" style="background:${c.color};"></div>
+        <span class="nav-label">${esc(c.name)}</span>
+        <span class="nav-index">${i + 1}</span>
+      `;
+      item.addEventListener('click', () => jumpTo(i));
+      list.appendChild(item);
+    });
+  }
+
+  // ── Render: dot pagination ────────────────────────────────
+
+  function renderPagination() {
+    const pg = document.getElementById('pagination');
+    pg.innerHTML = '';
+    if (counters.length <= 1) return;
+
+    const max   = 10;
+    const total = counters.length;
+    const show  = Math.min(total, max);
+
+    for (let i = 0; i < show; i++) {
+      const realIdx = total <= max ? i : Math.round(i * (total - 1) / (show - 1));
+      const dot = document.createElement('div');
+      dot.className = 'page-dot' + (realIdx === activeIdx ? ' active' : '');
+      dot.addEventListener('click', () => jumpTo(realIdx));
+      pg.appendChild(dot);
+    }
+  }
+
+  // ── Render: arrows ────────────────────────────────────────
+
+  function updateArrows() {
+    const L = document.getElementById('arrowLeft');
+    const R = document.getElementById('arrowRight');
+    if (!L || !R) return;
+    L.classList.toggle('disabled', activeIdx <= 0 || counters.length === 0);
+    R.classList.toggle('disabled', activeIdx >= counters.length - 1 || counters.length === 0);
+
+    const del = document.getElementById('deleteBtn');
+    if (del) del.style.visibility = counters.length ? 'visible' : 'hidden';
+  }
+
+  // ── Render: planet view ───────────────────────────────────
+
+  function renderPlanetView(slideClass) {
+    const wrap = document.getElementById('planetView');
+    wrap.innerHTML = '';
+
+    if (!counters.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = `
+        <div class="empty-orb"></div>
+        <h2>No planets yet</h2>
+        <p>Add a new planet to begin tracking its orbit.</p>
+      `;
+      wrap.appendChild(empty);
+      return;
+    }
+
+    const c   = counters[activeIdx];
+    const p   = pct(c);
+    const off = CIRC * (1 - p);
+    const pos = moonPos(p);
+    const arcCol = darken(c.color);
+
+    const view = document.createElement('div');
+    view.className = 'planet-view' + (slideClass ? ' ' + slideClass : '');
+    view.dataset.id = c.id;
+
+    view.innerHTML = `
+      <div class="planet-heading">
+        <span class="planet-heading-name">${esc(c.name)}</span>
+        <div class="planet-counter-label">${activeIdx + 1} of ${counters.length}</div>
+      </div>
+      <div class="target-row">
+          <span>Target orbit:</span>
+          <input class="target-input" type="number" min="1" value="${c.targetDays}"
+                 onchange="setTarget('${c.id}', this.value)" />
+          <span>days</span>
+      </div>
+      <div class="orbits-badge" id="orbits-badge-${c.id}">
+        <span class="orbits-count">x${c.orbitsCompleted ?? 0}</span>
+        <span>orbits completed</span>
+      </div>
+      <div class="orbit-wrap">
+        <svg width="${SVG_SIZE}" height="${SVG_SIZE}"
+             viewBox="0 0 ${SVG_SIZE} ${SVG_SIZE}"
+             xmlns="http://www.w3.org/2000/svg">
+          <circle class="orbit-track"
+            cx="${CX}" cy="${CY}" r="${ORBIT_R}" />
+          <circle class="orbit-arc"
+            cx="${CX}" cy="${CY}" r="${ORBIT_R}"
+            stroke="${arcCol}"
+            stroke-dasharray="${CIRC.toFixed(3)}"
+            stroke-dashoffset="${off.toFixed(3)}"
+            transform="rotate(-90 ${CX} ${CY})"
+          />
+          <g class="planet-group" id="planet-body-${c.id}">
+            <circle class="planet-body"
+              cx="${CX}" cy="${CY}" r="${PLANET_R}"
+              fill="${c.color}" />
+            <ellipse class="planet-shine"
+              cx="${CX - PLANET_R * 0.22}" cy="${CY - PLANET_R * 0.28}"
+              rx="${PLANET_R * 0.48}" ry="${PLANET_R * 0.30}"
+              transform="rotate(-30 ${CX} ${CY})" />
+          </g>
+          <text class="pct-label"     x="${CX}" y="${CY + 3}">${Math.round(p * 100)}%</text>
+          <circle class="moon-dot"
+            cx="${pos.x.toFixed(2)}" cy="${pos.y.toFixed(2)}"
+            r="${MOON_R}" />
+        </svg>
+      </div>
+
+      <div class="controls-area">
+        <div class="day-controls">
+          <button class="step-btn" onclick="adjustDay('${c.id}', -1)">&#8722;</button>
+          <text class="day-main-display" x="${CX}" y="${CY + 10}">${c.currentDay}</text>
+          <input  class="day-input" type="number" min="0" value="${c.currentDay}"
+                  onchange="setDay('${c.id}', this.value)" />
+          <button class="step-btn" onclick="adjustDay('${c.id}', 1)">&#43;</button>
+          <span class="day-unit">days</span>
+        </div> 
+        <div class="streak-pill" id="streak-pill-${c.id}">
+          <svg class="streak-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="9" stroke="#B0A99F" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <circle cx="12" cy="3"  r="2" fill="#1A1714"/>
+          </svg>
+          <span class="streak-val" id="streak-val-${c.id}">
+            <span class="streak-num">${c.streak}</span>
+          </span>
+          <span class="streak-unit">orbit force</span>
+        </div>
+        <div class="day-sub-label-row">
+          <text class="day-sub-label" x="${CX}" y="${CY + 14}">${c.currentDay} / ${c.targetDays}</text>
+        </div>
+      </div>
+    `;
+
+    view.querySelector('.planet-heading-name').addEventListener('click', function() {
+      editName(this, c.id);
+    });
+    view.querySelector('.streak-val').addEventListener('click', function() {
+      editStreak(this, c.id);
+    });
+    view.querySelector('.planet-body').addEventListener('click', function() {
+      tapPlanet(c.id);
+    });
+
+    wrap.appendChild(view);
+  }
+
+  // ── In-place SVG update ───────────────────────────────────
+
+  function updatePlanetSVG(id) {
+    const c = counters.find(x => x.id === id);
+    if (!c) return;
+    const view = document.getElementById('planetView');
+    const vEl  = view.querySelector('[data-id="' + id + '"]');
+    if (!vEl) return;
+
+    const p      = pct(c);
+    const off    = CIRC * (1 - p);
+    const pos    = moonPos(p);
+    const arcCol = darken(c.color);
+
+    vEl.querySelector('.orbit-arc').style.strokeDashoffset = off;
+    vEl.querySelector('.orbit-arc').setAttribute('stroke', arcCol);
+    vEl.querySelector('.moon-dot').setAttribute('cx', pos.x.toFixed(2));
+    vEl.querySelector('.moon-dot').setAttribute('cy', pos.y.toFixed(2));
+    vEl.querySelector('.pct-label').textContent      = Math.round(p * 100) + '%';
+    vEl.querySelector('.day-sub-label').textContent  = c.currentDay + ' / ' + c.targetDays;
+    vEl.querySelector('.day-main-display').textContent  = c.currentDay;
+    vEl.querySelector('.day-input').value            = c.currentDay;
+    vEl.querySelector('.target-input').value         = c.targetDays;
+    vEl.querySelector('.streak-num').textContent     = c.streak;
+    const orbitsBadge = vEl.querySelector('.orbits-badge .orbits-count');
+    if (orbitsBadge) orbitsBadge.textContent = 'x' + (c.orbitsCompleted ?? 0);
+    const nameEl = vEl.querySelector('.planet-heading-name');
+    if (nameEl) nameEl.textContent = c.name;
+  }
+
+  function pulseStreak(id) {
+    const pill = document.getElementById('streak-pill-' + id);
+    if (!pill) return;
+    pill.classList.remove('pulse');
+    void pill.offsetWidth;
+    pill.classList.add('pulse');
+  }
+
+  function tapPlanet(id) {
+    // Bounce animation — restart cleanly even on rapid clicks
+    const body = document.getElementById('planet-body-' + id);
+    if (body) {
+      body.classList.remove('bounce');
+      void body.offsetWidth;           // flush so re-adding triggers fresh anim
+      body.classList.add('bounce');
+      body.addEventListener('animationend', () => body.classList.remove('bounce'), { once: true });
+    }
+    // Increment day by 1
+    adjustDay(id, 1);
+  }
+
+  // ── Orbit completion ──────────────────────────────────────
+
+  let _congratsId = null;
+
+  function checkOrbitComplete(id, prevDay) {
+    const c = counters.find(x => x.id === id);
+    // Only fire on the exact moment of crossing: was below target, now at/above
+    if (!c || prevDay >= c.targetDays || c.currentDay < c.targetDays) return;
+    showCongrats(c);
+  }
+
+  function showCongrats(c) {
+    _congratsId = c.id;
+
+    document.getElementById('congrats-title').textContent =
+      c.name + ' completed an orbit!';
+    document.getElementById('congrats-body').textContent =
+      'Target reached. Set your next orbit target to keep the momentum going.';
+    document.getElementById('congrats-next-input').value = c.targetDays;
+
+    // Confetti
+    const wrap = document.getElementById('confetti-wrap');
+    wrap.innerHTML = '';
+    const COLORS = [c.color, darken(c.color, 0.7), '#DDD8CF', '#B0A99F', '#1A1714'];
+    for (let i = 0; i < 28; i++) {
+      const s = document.createElement('span');
+      s.style.left             = (5 + Math.random() * 90) + '%';
+      s.style.background       = COLORS[i % COLORS.length];
+      s.style.animationDelay   = (Math.random() * 0.55) + 's';
+      s.style.animationDuration = (1.1 + Math.random() * 0.6) + 's';
+      s.style.width            = (5 + Math.random() * 5) + 'px';
+      s.style.height           = (5 + Math.random() * 5) + 'px';
+      s.style.borderRadius     = Math.random() > 0.5 ? '50%' : '2px';
+      wrap.appendChild(s);
+    }
+
+    document.getElementById('congrats-overlay').classList.add('show');
+  }
+
+  async function confirmCongrats() {
+    document.getElementById('congrats-overlay').classList.remove('show');
+    if (_congratsId === null) return;
+    const c = counters.find(x => x.id === _congratsId);
+    const nextTarget   = Math.max(1, parseInt(
+      document.getElementById('congrats-next-input').value, 10) || 1);
+    const nextOrbits   = (c ? c.orbitsCompleted ?? 0 : 0) + 1;
+    await patchCounter(_congratsId, { targetDays: nextTarget, day: 0, orbitsCompleted: nextOrbits });
+    _congratsId = null;
+  }
+
+  function dismissCongrats() {
+    document.getElementById('congrats-overlay').classList.remove('show');
+    _congratsId = null;
+  }
+
+  // ── Inline edit: name ─────────────────────────────────────
+
+  function editName(span, id) {
+    const original = span.textContent.trim();
+    const input    = document.createElement('input');
+    input.className = 'name-input-large';
+    input.value     = original;
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function commit() {
+      const val = input.value.trim() || original;
+      const newSpan = document.createElement('span');
+      newSpan.className   = 'planet-heading-name';
+      newSpan.textContent = val;
+      newSpan.addEventListener('click', () => editName(newSpan, id));
+      input.replaceWith(newSpan);
+      if (val !== original) patchCounter(id, { name: val });
+    }
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+  }
+
+  // ── Inline edit: streak ───────────────────────────────────
+
+  function editStreak(valEl, id) {
+    const curr  = parseInt(valEl.querySelector('.streak-num').textContent, 10);
+    const input = document.createElement('input');
+    input.className = 'streak-edit';
+    input.type  = 'number';
+    input.min   = '0';
+    input.value = curr;
+    valEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function commit() {
+      const newVal  = Math.max(0, parseInt(input.value, 10) || 0);
+      const newSpan = document.createElement('span');
+      newSpan.className = 'streak-val';
+      newSpan.id        = 'streak-val-' + id;
+      newSpan.innerHTML = `<span class="streak-num">${newVal}</span>`;
+      newSpan.addEventListener('click', () => editStreak(newSpan, id));
+      input.replaceWith(newSpan);
+      if (newVal !== curr) patchCounter(id, { streak: newVal });
+    }
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+  }
+
+  // ── Day mutations ─────────────────────────────────────────
+
+  async function adjustDay(id, delta) {
+    const c = counters.find(x => x.id === id);
+    if (!c) return;
+    const prev   = c.currentDay;
+    const newDay = Math.max(0, c.currentDay + delta);
+    if (newDay === prev) return;
+    await patchCounter(id, { day: newDay });
+    if (newDay > prev) pulseStreak(id);
+    checkOrbitComplete(id, prev);
+  }
+
+  async function setDay(id, val) {
+    const c = counters.find(x => x.id === id);
+    if (!c) return;
+    const prev   = c.currentDay;
+    const newDay = Math.max(0, parseInt(val, 10) || 0);
+    await patchCounter(id, { day: newDay });
+    if (newDay > prev) pulseStreak(id);
+    checkOrbitComplete(id, prev);
+  }
+
+  // ── Target orbit change (with confirm dialog) ────────────
+
+  // Pending state: held between user triggering the dialog and confirming
+  let _pendingTargetId  = null;
+  let _pendingTargetVal = null;
+  let _pendingTargetPrev = null; // previous value to restore on cancel
+
+  function setTarget(id, val) {
+    const c = counters.find(x => x.id === id);
+    if (!c) return;
+    const newTarget = Math.max(1, parseInt(val, 10) || 1);
+    if (newTarget === c.targetDays) return; // nothing changed — no dialog needed
+    _pendingTargetId   = id;
+    _pendingTargetVal  = newTarget;
+    _pendingTargetPrev = c.targetDays;
+    document.getElementById('orbit-overlay').classList.add('show');
+  }
+
+  async function confirmOrbit() {
+    document.getElementById('orbit-overlay').classList.remove('show');
+    if (_pendingTargetId === null) return;
+    // Apply new target and reset current day to 0
+    await patchCounter(_pendingTargetId, { targetDays: _pendingTargetVal, day: 0 });
+    _pendingTargetId = _pendingTargetVal = _pendingTargetPrev = null;
+  }
+
+  function cancelOrbit() {
+    document.getElementById('orbit-overlay').classList.remove('show');
+    // Restore the input to the previous value so it doesn't show the typed number
+    if (_pendingTargetId !== null) {
+      const input = document.querySelector(
+        `[data-id="${_pendingTargetId}"] .target-input`
+      );
+      if (input) input.value = _pendingTargetPrev;
+    }
+    _pendingTargetId = _pendingTargetVal = _pendingTargetPrev = null;
+  }
+
+  // ── Keyboard navigation ───────────────────────────────────
+
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowLeft')  navigate(-1);
+    if (e.key === 'ArrowRight') navigate(1);
+  });
+
+  // ── Boot ──────────────────────────────────────────────────
+  loadCounters();
+</script>
+</body>
+</html>

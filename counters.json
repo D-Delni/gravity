@@ -1,0 +1,32 @@
+[
+  {
+    "id": "95693a9b-8d45-4ebe-8e4b-af2e04fc33d5",
+    "name": "Caelum",
+    "currentDay": 5,
+    "targetDays": 10,
+    "streak": 105,
+    "color": "#E8C5A0",
+    "orbitsCompleted": 6,
+    "createdAt": "2026-03-28T03:57:05.503Z"
+  },
+  {
+    "id": "43b04039-b311-4582-af57-f154f5cfc678",
+    "name": "Eryx",
+    "currentDay": 0,
+    "targetDays": 4,
+    "streak": 48,
+    "color": "#C5A8DA",
+    "orbitsCompleted": 4,
+    "createdAt": "2026-03-28T03:59:19.888Z"
+  },
+  {
+    "id": "f1f80584-a6a5-43aa-b4f5-ff9f790429e5",
+    "name": "Fenris",
+    "currentDay": 0,
+    "targetDays": 30,
+    "streak": 0,
+    "color": "#A8DAC5",
+    "orbitsCompleted": 0,
+    "createdAt": "2026-03-28T03:59:20.086Z"
+  }
+]
