@@ -777,173 +777,16 @@
     /* ── Responsive ────────────────────────────────────── */
     @media (max-width: 640px) {
       :root { --nav-w: 160px; }
+      .orbit-wrap { width: 240px; height: 240px; }
+      .controls-area { width: 240px; }
       .nav-arrow.left  { left: 0.5rem; }
       .nav-arrow.right { right: 0.5rem; }
     }
 
-    /* ════════════════════════════════════════════════════
-       MOBILE — Pixel 8 (393×851) & iPhone 16 (393×852)
-       Both share 393px CSS width in portrait
-    ════════════════════════════════════════════════════ */
-    @media (max-width: 480px) {
-
-      /* ── Layout ──────────────────────────────────────── */
-      .navbar  { display: none; }   /* replaced by bottom nav  */
-      .topbar  { display: none; }   /* actions move to bottom nav */
-      .app     { flex-direction: column; }
-
-      /* Stage fills everything above the bottom nav */
-      .stage {
-        padding-bottom: 64px;       /* same height as bottom nav */
-        align-items: center;
-        justify-content: center;
-      }
-
-      /* ── Carousel slide vertical centering ───────────── */
-      .carousel-slide {
-        justify-content: center;
-      }
-
-      /* ── SVG orbit: fluid scaling ─────────────────────
-         The SVG itself has no width/height attributes —
-         it scales via its parent .orbit-wrap.
-         On 393px screen minus 2×40px arrows = 313px usable.
-         We use 78vw which gives ~307px — fits with margin.   */
-      .orbit-wrap {
-        width:  min(78vw, 270px);
-        height: min(78vw, 270px);
-      }
-
-      /* ── Controls match SVG width ─────────────────────── */
-      .controls-area {
-        width: min(78vw, 270px);
-        gap: 0.5rem;
-        margin-top: 0.3rem;
-      }
-
-      /* ── Planet heading ───────────────────────────────── */
-      .planet-heading      { margin-bottom: 0.15rem; }
-      .planet-heading-name { font-size: 1.4rem; }
-      .name-input-large    { font-size: 1.4rem; width: 200px; }
-      .planet-counter-label { font-size: 0.6rem; margin-top: 0.1rem; }
-
-      /* ── Bounce pivot: always SVG centre regardless of size */
-      .planet-group.bounce { transform-origin: 50% 50%; }
-
-      /* ── Nav arrows ───────────────────────────────────── */
-      .nav-arrow       { width: 40px; height: 40px; }
-      .nav-arrow.left  { left:  0.3rem; }
-      .nav-arrow.right { right: 0.3rem; }
-
-      /* ── Touch targets ────────────────────────────────── */
-      .step-btn { width: 42px; height: 42px; font-size: 1.2rem; }
-
-      /* ── Pagination above bottom nav ──────────────────── */
-      .pagination { bottom: 72px; }
-
-      /* ── Streak pill smaller ──────────────────────────── */
-      .streak-pill { font-size: 0.72rem; padding: 0.28rem 0.75rem 0.28rem 0.6rem; }
-
-      /* ── Orbits badge smaller ─────────────────────────── */
-      .orbits-badge { font-size: 0.62rem; }
-
-      /* ── Dialogs full-width ───────────────────────────── */
-      .dialog,
-      .congrats-dialog {
-        max-width: 92vw;
-        padding: 1.6rem 1.1rem 1.3rem;
-      }
-
-      /* ── Bottom nav: revealed ─────────────────────────── */
-      .bottom-nav { display: flex !important; }
-    }
-
-    /* ── Bottom navigation bar (hidden on desktop) ─────── */
-    .bottom-nav {
-      display: none;
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      height: 64px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      z-index: 50;
-      align-items: stretch;
-    }
-
-    .bottom-nav-btn {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.15rem;
-      font-family: var(--font-body);
-      font-size: 0.58rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--ink-mid);
-      background: transparent;
-      border: none;
-      border-radius: 0;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-      padding: 0.5rem 0.2rem 0.6rem;
-      /* safe area for iPhone home indicator */
-      padding-bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
-    }
-
-    .bottom-nav-btn:active { background: var(--bg2); color: var(--ink); }
-
-    .bottom-nav-btn svg {
-      width: 20px; height: 20px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .bottom-nav-btn.danger      { color: #b03020; }
-    .bottom-nav-btn.danger:active { background: #fdf0ef; }
-
-    /* ── Planet sheet (mobile slide-up list) ───────────── */
-    #planetSheet {
-      display: none;
-      position: fixed;
-      bottom: 64px; left: 0; right: 0;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      z-index: 49;
-      max-height: 52vh;
-      overflow-y: auto;
-      box-shadow: 0 -4px 24px rgba(26,23,20,0.10);
-    }
-
-    .sheet-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1.2rem;
-      cursor: pointer;
-      border-bottom: 1px solid var(--border);
-      transition: background 0.14s;
-      font-size: 0.88rem;
-      color: var(--ink-mid);
-    }
-
-    .sheet-item:active    { background: var(--bg2); }
-    .sheet-item.active-planet { background: var(--bg2); color: var(--ink); font-weight: 500; }
-
-    .sheet-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .sheet-idx {
-      margin-left: auto;
-      font-size: 0.65rem;
-      color: var(--ink-light);
+    @media (max-width: 440px) {
+      .navbar { display: none; }
+      .nav-arrow.left  { left: 0.25rem; }
+      .nav-arrow.right { right: 0.25rem; }
     }
   </style>
 </head>
@@ -972,7 +815,7 @@
   <div class="content">
 
     <div class="topbar">
-      <button class="btn-ghost" id="deleteBtn" onclick="confirmDeletePlanet()">Remove planet</button>
+      <button class="btn-ghost" id="deleteBtn" onclick="deleteCurrentPlanet()">Remove planet</button>
     </div>
 
     <!-- stage: one planet at a time -->
@@ -997,36 +840,6 @@
   </div>
 </div>
 
-<!-- ── BOTTOM NAV (mobile only) ─────────────────────────── -->
-<nav class="bottom-nav">
-
-  <button class="bottom-nav-btn" onclick="addCounter()">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-    Add
-  </button>
-
-  <button class="bottom-nav-btn" id="sheetToggleBtn" onclick="togglePlanetSheet()">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/></svg>
-    Planets
-  </button>
-
-  <button class="bottom-nav-btn danger" onclick="confirmDeletePlanet()">
-    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-    Remove
-  </button>
-
-  <button class="bottom-nav-btn danger" onclick="showResetDialog()">
-    <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
-    Reset
-  </button>
-
-</nav>
-
-<!-- ── PLANET SHEET ──────────────────────────────────────── -->
-<div id="planetSheet">
-  <div id="sheetList"></div>
-</div>
-
 <!-- ── CONGRATS OVERLAY ───────────────────────────────────── -->
 <div class="overlay" id="congrats-overlay">
   <div class="congrats-dialog">
@@ -1042,19 +855,6 @@
     <div class="dialog-actions">
       <button class="btn-ghost"                  onclick="dismissCongrats()">Maybe later</button>
       <button class="btn-primary" style="width:auto" onclick="confirmCongrats()">Let&#39;s go!</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── DELETE PLANET OVERLAY ────────────────────────────────── -->
-<div class="overlay" id="delete-overlay">
-  <div class="dialog">
-    <h2>Remove this planet?</h2>
-    <p id="delete-overlay-body">All progress will be permanently lost.<br>This cannot be undone.</p>
-    <div class="dialog-actions">
-      <button class="btn-ghost"                  onclick="cancelDelete()">Keep it</button>
-      <button class="btn-danger" style="border-radius:999px;padding:0.55rem 1rem;width:auto"
-              onclick="executeDelete()">Remove</button>
     </div>
   </div>
 </div>
@@ -1140,27 +940,10 @@
     return n;
   }
 
-  // ── User identity (localStorage, generated once per browser) ─
-  //    Sent as X-User-ID on every API request so the server
-  //    can scope all data to this user without any login.
-
-  const USER_ID_KEY = 'grav_uid';
-  let userId = localStorage.getItem(USER_ID_KEY);
-  if (!userId) {
-    userId = crypto.randomUUID();
-    localStorage.setItem(USER_ID_KEY, userId);
-  }
-
   // ── API ───────────────────────────────────────────────────
 
   async function api(method, path, body) {
-    const opts = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-ID': userId,            // ← scope every request to this user
-      },
-    };
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
     if (body !== undefined) opts.body = JSON.stringify(body);
     const res = await fetch(path, opts);
     if (res.status === 204) return null;
@@ -1181,30 +964,11 @@
     renderAll('right');
   }
 
-  // ── Delete planet — two-step confirmation ─────────────────
-  let _pendingDeleteId = null;
-
-  function confirmDeletePlanet() {
+  async function deleteCurrentPlanet() {
     if (!counters.length) return;
-    const c = counters[activeIdx];
-    _pendingDeleteId = c.id;
-    document.getElementById('delete-overlay-body').innerHTML =
-      `<strong>${esc(c.name)}</strong> and all its progress will be<br>permanently lost. This cannot be undone.`;
-    document.getElementById('delete-overlay').classList.add('show');
-  }
-
-  function cancelDelete() {
-    document.getElementById('delete-overlay').classList.remove('show');
-    _pendingDeleteId = null;
-  }
-
-  async function executeDelete() {
-    document.getElementById('delete-overlay').classList.remove('show');
-    if (!_pendingDeleteId) return;
-    const id = _pendingDeleteId;
-    _pendingDeleteId = null;
+    const id = counters[activeIdx].id;
     await api('DELETE', `/api/counters/${id}`);
-    counters.splice(counters.findIndex(c => c.id === id), 1);
+    counters.splice(activeIdx, 1);
     activeIdx = Math.min(activeIdx, Math.max(0, counters.length - 1));
     renderAll();
   }
@@ -1392,9 +1156,9 @@
         <span>orbits completed</span>
       </div>
       <div class="orbit-wrap">
-        <svg viewBox="0 0 ${SVG_SIZE} ${SVG_SIZE}"
-             xmlns="http://www.w3.org/2000/svg"
-             style="width:100%;height:100%;">
+        <svg width="${SVG_SIZE}" height="${SVG_SIZE}"
+             viewBox="0 0 ${SVG_SIZE} ${SVG_SIZE}"
+             xmlns="http://www.w3.org/2000/svg">
           <circle class="orbit-track"
             cx="${CX}" cy="${CY}" r="${ORBIT_R}" />
           <circle class="orbit-arc"
@@ -1677,58 +1441,6 @@
     }
     _pendingTargetId = _pendingTargetVal = _pendingTargetPrev = null;
   }
-
-  // ── Mobile: planet sheet ─────────────────────────────────
-
-  function togglePlanetSheet() {
-    const sheet = document.getElementById('planetSheet');
-    const open  = sheet.style.display === 'block';
-    if (open) {
-      sheet.style.display = 'none';
-    } else {
-      renderSheet();
-      sheet.style.display = 'block';
-    }
-  }
-
-  function renderSheet() {
-    const list = document.getElementById('sheetList');
-    if (!list) return;
-    list.innerHTML = '';
-    counters.forEach((c, i) => {
-      const item = document.createElement('div');
-      item.className = 'sheet-item' + (i === activeIdx ? ' active-planet' : '');
-      const dot = document.createElement('span');
-      dot.className = 'sheet-dot';
-      dot.style.background = c.color;
-      if (i === activeIdx) {
-        dot.style.boxShadow = '0 0 0 2px var(--bg2), 0 0 0 3.5px var(--ink-light)';
-      }
-      const name = document.createElement('span');
-      name.textContent = c.name;
-      const idx = document.createElement('span');
-      idx.className = 'sheet-idx';
-      idx.textContent = i + 1;
-      item.appendChild(dot);
-      item.appendChild(name);
-      item.appendChild(idx);
-      item.addEventListener('click', () => {
-        document.getElementById('planetSheet').style.display = 'none';
-        jumpTo(i);
-      });
-      list.appendChild(item);
-    });
-  }
-
-  // Close sheet on outside tap
-  document.addEventListener('click', e => {
-    const sheet = document.getElementById('planetSheet');
-    const btn   = document.getElementById('sheetToggleBtn');
-    if (!sheet || sheet.style.display !== 'block') return;
-    if (!sheet.contains(e.target) && btn && !btn.contains(e.target)) {
-      sheet.style.display = 'none';
-    }
-  });
 
   // ── Keyboard navigation ───────────────────────────────────
 

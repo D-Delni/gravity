@@ -1,6 +1,8 @@
 import { serve, file, write } from "bun";
 import { randomUUID } from "crypto";
 
+// ── Types ──────────────────────────────────────────────────
+
 interface Counter {
   id: string;
   name: string;
@@ -12,43 +14,74 @@ interface Counter {
   createdAt: string;
 }
 
-const DATA_FILE = process.env.RAILWAY_VOLUME_MOUNT_PATH
+// The store is a map of userId → Counter[].
+// This is what gets written to counters.json.
+type Store = Record<string, Counter[]>;
+
+// ── Config ─────────────────────────────────────────────────
+
+const DATA_FILE  = process.env.RAILWAY_VOLUME_MOUNT_PATH
   ? `${process.env.RAILWAY_VOLUME_MOUNT_PATH}/counters.json`
   : "counters.json";
 
 const PUBLIC_DIR = "./public";
 
 const PLANET_COLORS = [
-  "#E8C5A0",
-  "#A8C5DA",
-  "#C5A8DA",
-  "#A8DAC5",
-  "#DAC5A8",
-  "#A8B8DA",
-  "#DAA8B8",
-  "#B8DAA8",
+  "#E8C5A0", "#A8C5DA", "#C5A8DA", "#A8DAC5",
+  "#DAC5A8", "#A8B8DA", "#DAA8B8", "#B8DAA8",
 ];
 
-async function loadCounters(): Promise<Counter[]> {
+// ── Persistence ────────────────────────────────────────────
+
+function migrateCounter(c: Counter): Counter {
+  return { ...c, orbitsCompleted: c.orbitsCompleted ?? 0 };
+}
+
+async function loadStore(): Promise<Store> {
   try {
     const f = file(DATA_FILE);
-    if (!(await f.exists())) return [];
-    const raw = JSON.parse(await f.text()) as Counter[];
-    // Migrate existing records that predate orbitsCompleted field
-    return raw.map(c => ({
-      ...c,
-      orbitsCompleted: c.orbitsCompleted ?? 0,
-    }));
+    if (!(await f.exists())) return {};
+
+    const raw = JSON.parse(await f.text());
+
+    // Migration: if the file is a flat array (pre-sessions format),
+    // wrap it under the key "default" so no data is lost.
+    if (Array.isArray(raw)) {
+      const migrated: Store = {
+        default: (raw as Counter[]).map(migrateCounter),
+      };
+      await saveStore(migrated);
+      console.log("Migrated flat counters.json → multi-user store");
+      return migrated;
+    }
+
+    // Normal load: migrate each user's counters individually
+    const store = raw as Store;
+    for (const uid of Object.keys(store)) {
+      store[uid] = store[uid].map(migrateCounter);
+    }
+    return store;
   } catch {
-    return [];
+    return {};
   }
 }
 
-async function saveCounters(counters: Counter[]): Promise<void> {
-  await write(DATA_FILE, JSON.stringify(counters, null, 2));
+async function saveStore(store: Store): Promise<void> {
+  await write(DATA_FILE, JSON.stringify(store, null, 2));
 }
 
-let counters: Counter[] = await loadCounters();
+// ── In-memory store (single source of truth) ───────────────
+
+let store: Store = await loadStore();
+
+// Returns a user's counter list, creating it if it doesn't exist yet.
+// Does NOT write to disk — callers are responsible for saving.
+function getUserCounters(userId: string): Counter[] {
+  if (!store[userId]) store[userId] = [];
+  return store[userId];
+}
+
+// ── Response helpers ───────────────────────────────────────
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -61,14 +94,17 @@ function err(msg: string, status: number): Response {
   return json({ error: msg }, status);
 }
 
+// ── Server ─────────────────────────────────────────────────
+
 serve({
-  port: 3000,
+  port: parseInt(process.env.PORT ?? "3000"),
+
   async fetch(req) {
     const url    = new URL(req.url);
     const path   = url.pathname;
     const method = req.method;
 
-    // ── Static files ──────────────────────────────────────
+    // ── Static files ────────────────────────────────────────
     if (!path.startsWith("/api")) {
       const fp = path === "/" ? `${PUBLIC_DIR}/index.html` : `${PUBLIC_DIR}${path}`;
       const f  = file(fp);
@@ -76,19 +112,25 @@ serve({
       return new Response(f);
     }
 
-    // ── GET /api/counters ─────────────────────────────────
+    // ── Require X-User-ID on all API routes ─────────────────
+    const userId = req.headers.get("X-User-ID")?.trim();
+    if (!userId) return err("Missing X-User-ID header", 400);
+
+    // ── GET /api/counters ───────────────────────────────────
     if (method === "GET" && path === "/api/counters") {
-      return json(counters);
+      return json(getUserCounters(userId));
     }
 
-    // ── POST /api/counters/reset ──────────────────────────
+    // ── POST /api/counters/reset ────────────────────────────
     if (method === "POST" && path === "/api/counters/reset") {
-      counters = counters.map((c) => ({ ...c, currentDay: 0, streak: 0 }));
-      await saveCounters(counters);
-      return json(counters);
+      store[userId] = getUserCounters(userId).map(
+        (c) => ({ ...c, currentDay: 0, streak: 0 })
+      );
+      await saveStore(store);
+      return json(store[userId]);
     }
 
-    // ── POST /api/counters ────────────────────────────────
+    // ── POST /api/counters ──────────────────────────────────
     if (method === "POST" && path === "/api/counters") {
       let body: { name?: string };
       try { body = (await req.json()) as { name?: string }; }
@@ -97,7 +139,9 @@ serve({
       const name = (body.name ?? "New Planet").trim();
       if (!name) return err("Name cannot be empty", 400);
 
-      const color = PLANET_COLORS[counters.length % PLANET_COLORS.length];
+      const userCounters = getUserCounters(userId);
+      const color = PLANET_COLORS[userCounters.length % PLANET_COLORS.length];
+
       const counter: Counter = {
         id: randomUUID(),
         name,
@@ -108,17 +152,21 @@ serve({
         orbitsCompleted: 0,
         createdAt: new Date().toISOString(),
       };
-      counters.push(counter);
-      await saveCounters(counters);
+
+      userCounters.push(counter);
+      store[userId] = userCounters;
+      await saveStore(store);
       return json(counter, 201);
     }
 
     const idMatch = path.match(/^\/api\/counters\/([^/]+)$/);
 
-    // ── PATCH /api/counters/:id ───────────────────────────
+    // ── PATCH /api/counters/:id ─────────────────────────────
     if (method === "PATCH" && idMatch) {
-      const id  = idMatch[1];
-      const idx = counters.findIndex((c) => c.id === id);
+      const id           = idMatch[1];
+      const userCounters = getUserCounters(userId);
+      const idx          = userCounters.findIndex((c) => c.id === id);
+
       if (idx === -1) return err("Not found", 404);
 
       let body: {
@@ -131,40 +179,37 @@ serve({
       try { body = (await req.json()) as typeof body; }
       catch { return err("Invalid JSON", 400); }
 
-      const c = { ...counters[idx] };
+      const c = { ...userCounters[idx] };
 
       if (body.name !== undefined) {
         const n = body.name.trim();
         if (!n) return err("Name cannot be empty", 400);
         c.name = n;
       }
-      if (body.targetDays !== undefined) {
-        c.targetDays = Math.max(1, Math.floor(body.targetDays));
-      }
-      if (body.streak !== undefined) {
-        c.streak = Math.max(0, Math.floor(body.streak));
-      }
+      if (body.targetDays    !== undefined) c.targetDays    = Math.max(1, Math.floor(body.targetDays));
+      if (body.streak        !== undefined) c.streak        = Math.max(0, Math.floor(body.streak));
+      if (body.orbitsCompleted !== undefined) c.orbitsCompleted = Math.max(0, Math.floor(body.orbitsCompleted));
       if (body.day !== undefined) {
         const nd = Math.max(0, Math.floor(body.day));
         if (nd > c.currentDay) c.streak += nd - c.currentDay;
         c.currentDay = nd;
       }
-      if (body.orbitsCompleted !== undefined) {
-        c.orbitsCompleted = Math.max(0, Math.floor(body.orbitsCompleted));
-      }
 
-      counters[idx] = c;
-      await saveCounters(counters);
+      userCounters[idx] = c;
+      store[userId]     = userCounters;
+      await saveStore(store);
       return json(c);
     }
 
-    // ── DELETE /api/counters/:id ──────────────────────────
+    // ── DELETE /api/counters/:id ────────────────────────────
     if (method === "DELETE" && idMatch) {
-      const id     = idMatch[1];
-      const before = counters.length;
-      counters     = counters.filter((c) => c.id !== id);
-      if (counters.length === before) return err("Not found", 404);
-      await saveCounters(counters);
+      const id           = idMatch[1];
+      const userCounters = getUserCounters(userId);
+      const before       = userCounters.length;
+      store[userId]      = userCounters.filter((c) => c.id !== id);
+
+      if (store[userId].length === before) return err("Not found", 404);
+      await saveStore(store);
       return new Response(null, { status: 204 });
     }
 
@@ -172,4 +217,4 @@ serve({
   },
 });
 
-console.log("Gravity! running at http://localhost:3000");
+console.log(`Gravity! running at http://localhost:${process.env.PORT ?? 3000}`);
