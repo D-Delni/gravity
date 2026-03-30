@@ -12,7 +12,10 @@ interface Counter {
   createdAt: string;
 }
 
-const DATA_FILE = "counters.json";
+const DATA_FILE = process.env.RAILWAY_VOLUME_MOUNT_PATH
+  ? `${process.env.RAILWAY_VOLUME_MOUNT_PATH}/counters.json`
+  : "counters.json";
+
 const PUBLIC_DIR = "./public";
 
 const PLANET_COLORS = [
